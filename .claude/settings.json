@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "deny": [
+      "Bash(cat .env*)",
+      "Bash(printenv)",
+      "Bash(env)",
+      "Bash(rm -rf *)",
+      "Bash(curl * | bash)",
+      "Bash(wget * | bash)"
+    ]
+  }
+}

@@ -1,0 +1,6 @@
+id,name,sku,unit_price,pack_size
+1,Widget A,WIDG-A,10.00,12
+2,Widget B,WIDG-B,15.00,6
+3,Supply Z,SUPP-Z,25.00,1
+4,Gadget X,GADG-X,50.00,4
+5,Gadget Y,GADG-Y,75.00,1
