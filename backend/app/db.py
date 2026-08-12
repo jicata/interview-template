@@ -1,23 +1,47 @@
-"""Thread-local in-memory SQLite seeded from CSV on first access."""
+"""Shared in-memory SQLite seeded from CSV at import time."""
+import contextlib
 import csv
 import pathlib
 import sqlite3
 import threading
+from collections.abc import Iterator
 
 _DATA = pathlib.Path(__file__).parent.parent / 'data'
-_local = threading.local()
+
+# Serialized mode makes individual sqlite3 calls thread-safe, but the implicit
+# transaction belongs to the shared connection — concurrent writers would
+# commit/roll back each other's work. All writes must go through transaction().
+_write_lock = threading.Lock()
 
 
 def get_connection() -> sqlite3.Connection:
-    if not hasattr(_local, 'conn'):
-        _local.conn = _build_db()
-    return _local.conn
+    return _conn
+
+
+@contextlib.contextmanager
+def transaction() -> Iterator[sqlite3.Connection]:
+    """Serialize write transactions across request threads.
+
+    Commits on success, rolls back on error. Use for any handler that writes:
+
+        with db.transaction() as conn:
+            conn.execute('INSERT ...', params)
+    """
+    with _write_lock:
+        try:
+            yield _conn
+            _conn.commit()
+        except BaseException:
+            _conn.rollback()
+            raise
 
 
 def _build_db() -> sqlite3.Connection:
-    conn = sqlite3.connect(':memory:')
+    # check_same_thread=False: FastAPI serves sync endpoints from a thread
+    # pool; sharing one connection requires a serialized sqlite3 build.
+    assert sqlite3.threadsafety == 3, 'sqlite3 must be built in serialized mode'
+    conn = sqlite3.connect(':memory:', check_same_thread=False)
     conn.row_factory = sqlite3.Row
-    conn.execute('PRAGMA journal_mode=WAL')
     c = conn.cursor()
     c.executescript('''
         CREATE TABLE customers (
@@ -68,3 +92,6 @@ def _build_db() -> sqlite3.Connection:
                 )
     conn.commit()
     return conn
+
+
+_conn = _build_db()
