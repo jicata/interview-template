@@ -16,6 +16,7 @@ A **flow** is a path through the skills. Most work travels the main flow; on-ram
 
 ## The main flow
 
+0. Too big to hold in one session, and the unknowns are *decisions* rather than build slices → `/wayfinder`. Charts the work as a map of decision tickets and works them one at a time until the route is clear, then hands off to the spec-authoring skill. It never builds. Skip this step when you already know what you're building.
 1. Sharpen the idea by interview — `/grill-with-docs` when it should leave a paper trail in the glossary or an ADR; `/grill-me` for a plan that doesn't touch the doc set.
 2. `/write-a-prd` — interview → codebase exploration → module design → files a `PRD:` issue.
 3. `/prd-to-issues` — slices the PRD into child issues as tracer-bullet vertical slices, with `Blocked by` edges. Prints the execution order.
@@ -51,6 +52,7 @@ A **flow** is a path through the skills. Most work travels the main flow; on-ram
 
 ## Vocabulary & doctrine underneath
 
+- `/karpathy-guidelines` — behavioural guidelines targeting common LLM coding pitfalls. Loaded by `/coder-lens` on every coder run; you rarely type it.
 - `/codebase-design` — deep-module vocabulary; `/tdd` and `/improve-codebase-architecture` speak it.
 - `/tdd` + `/coder-lens` — the implementation lenses. `coder-lens` is this repo's generated composite: what to load before writing code, and the two mistakes this repo punishes. Coders load these; you rarely type them.
 - `/code-reviewer-persona` — the persona the review skills adopt.
