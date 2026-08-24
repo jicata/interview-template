@@ -19,7 +19,7 @@ description: The composite lens every coder run loads before writing code in thi
 
 | Changing | Also load |
 | --- | --- |
-| Any Python under `backend/app/**` | `.claude/doctrine/backend-python.md` — typing, the `def` vs `async def` choice, error translation at the route boundary, pytest discipline |
+| Any Python under `backend/app/**` | `.claude/doctrine/backend-python.md` — typing, the `def` vs `async def` choice, context managers, exception chaining, error translation at the route boundary, pytest discipline |
 | A new or changed feature slice — `app/api/<f>.py` + `app/features/<f>/**` | `.claude/doctrine/arch-vsa.md` + profile → What this repo is for |
 | `app/db.py`, `data/*.csv`, or any handler that writes | `.claude/doctrine/relational-persistence.md` + profile → Persistence |
 | Anything under `backend/tests/**` | profile → Testing — shared-connection state leaks across tests |

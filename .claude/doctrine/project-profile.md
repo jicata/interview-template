@@ -24,7 +24,7 @@ review_identity: self          # PENDING flip to `app` — see Merge gates
 workhorse_model: sonnet
 glossary: docs/UBIQUITOUS_LANGUAGE.md
 smell_routing: "file a GitHub issue on jicata/interview-template; never refactor in place (see doctrine/surface-dont-chase.md)"
-base_version: 5bd9a7e          # jicata/skills @ pluggable-doctrine-axes
+base_version: 0401cdc          # jicata/skills @ pluggable-doctrine-axes
 ```
 
 ## How to maintain this file (the fill-in convention)
