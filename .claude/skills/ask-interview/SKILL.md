@@ -12,7 +12,7 @@ You don't remember every skill, so ask. This router names the flows and the edge
 
 A **flow** is a path through the skills. Most work travels the main flow; on-ramps merge onto it.
 
-> **Repo note:** the tracker is the **fork**, `jicata/interview-template`. Every skill below that files an issue or opens a PR targets the fork. `origin` is the interviewer's repo and is read-only.
+> **Repo note:** `origin` is **your fork**, `jicata/interview-template` — every skill below that files an issue or opens a PR targets it correctly. `upstream` is the interviewer's repo and is never written to. The default branch is `main`, not the `master` the ship-* skills name in their prose.
 
 ## The main flow
 

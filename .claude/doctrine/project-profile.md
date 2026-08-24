@@ -8,7 +8,7 @@ architecture_core: arch-layered    # owns PLACEMENT — layer boundaries, downwa
 backend_core: backend-python      # owns IDIOM — typing, async choice, error translation, pytest
 frontend_core: frontend-vue       # paired with arch-frontend.md (framework-neutral structure)
 architecture: "Layered with a feature-subdivided application layer — app/api/ (transport) -> app/features/<feature>/ (business logic) -> app/models/ (entities) + app/db.py (data). Dependencies point downward; no ports. Frontend src/{api,App.vue}"
-tracker: "GitHub issues (jicata/interview-template) — the FORK. Upstream prmsolutions/interview-template is read-only; see Deploy & environments"
+tracker: "GitHub issues (jicata/interview-template) = `origin`, standard fork layout. `upstream` is prmsolutions/interview-template, read-only; see Deploy & environments"
 check_commands:
   - "cd backend && .venv/Scripts/python -m pytest"       # Windows venv layout; POSIX is .venv/bin/
   - "cd frontend && npx vue-tsc --noEmit"                # the type gate
@@ -26,6 +26,7 @@ coder_lens:                    # how a coder run resolves "the repo's composite 
   default: coder-lens          # .claude/skills/coder-lens/SKILL.md — one lens covers both stacks here
   backend: coder-lens          # backend/app/**  -> arch-layered + backend-python + relational-persistence
   frontend: coder-lens         # frontend/src/** -> arch-frontend + frontend-vue
+default_branch: main           # NOT master. The afk pipeline's prose says `origin/master` throughout; resolve the real branch
 workhorse_model: sonnet
 glossary: docs/UBIQUITOUS_LANGUAGE.md
 smell_routing: "file a GitHub issue on jicata/interview-template; never refactor in place (see doctrine/surface-dont-chase.md)"
@@ -72,7 +73,11 @@ This is a **live-coding interview sandbox**, cloned from a template the intervie
 
 The one outward-facing constraint:
 
-> **Never push to `origin`.** `origin` is `prmsolutions/interview-template`, the interviewer's repo, where you have read access only. Push to `fork` (`jicata/interview-template`). WHY: an accidental branch or PR on their repo is visible to the people evaluating you and cannot be quietly undone. Evidence: `git remote -v`; fork created 2026-08-24.
+> **`origin` is yours; `upstream` is the interviewer's and is never written to.** Standard fork layout, set 2026-08-24: `origin` = `jicata/interview-template` (writable), `upstream` = `prmsolutions/interview-template` (read-only). A bare `git push` therefore goes to your own repo. WHY: the layout was originally inverted, which meant every pipeline skill — all of which hardcode `origin` — pointed at the interviewer's repo. Swapping makes the safe thing the default instead of a rule to remember. Evidence: `git remote -v`; the whole afk lane hardcodes `origin/master`.
+
+> **Never push, PR, or file an issue against `upstream`.** It is the repo the people evaluating you can see, and nothing there can be quietly undone. Evidence: same.
+
+> **The default branch is `main`, but the pipeline's prose says `master` everywhere.** `/afk-execute-issue` carries the escape hatch — "where this skill says `master`, use the repo's actual default branch (resolve once: `gh repo view --json defaultBranchRef`)" — but **`/ship-issue` does not**, and its worktree setup runs `git worktree add --detach "$WORKTREE_PATH" origin/master` literally, which fails here. Substitute `origin/main` wherever a ship-* skill says `origin/master`. WHY: the inconsistency is a base-library defect, not a repo quirk; fixing it locally would edit a read-only base file. Evidence: `ship-issue/SKILL.md` line 106 vs `afk-execute-issue/SKILL.md` line 16; verified 2026-08-24 — `defaultBranchRef` is `main`.
 
 ## Persistence
 
@@ -117,7 +122,7 @@ cd frontend && npm run dev                                   # port 3000, proxie
 
 > **Create the venv with `py -3.12`, not bare `python`.** The default `python` on this machine is 3.11.2; the README requires 3.12+. WHY: the app runs on 3.11 today, but a version-gated syntax or stdlib change during the session would fail confusingly under time pressure. Evidence: `py -0p` on 2026-08-24 lists `-V:3.12` at `%LOCALAPPDATA%\Programs\Python\Python312`; `README.md` prerequisites.
 
-> **Push with the `jicata` credential, not the active `gh` account.** `gh auth status` shows two logged-in accounts — `SGalovVSG` (active) and `jicata` — and the fork belongs to **jicata**. A plain `git push fork` resolves to the active account and fails `403 Permission denied to SGalovVSG`. Use `git push "https://x-access-token:$(gh auth token -u jicata)@github.com/jicata/interview-template.git" HEAD:<branch>`, which avoids switching the global active account and keeps the token out of `.git/config`. WHY: the failure is intermittent-looking — earlier pushes in the same session succeeded on a cached credential — so it reads as a flaky remote rather than an identity mismatch. Evidence: 403 on 2026-08-24 after several successful pushes to the same remote.
+> **Push with the `jicata` credential, not the active `gh` account.** `gh auth status` shows two logged-in accounts — `SGalovVSG` (active) and `jicata` — and the fork belongs to **jicata**. A plain `git push` resolves to the active account and fails `403 Permission denied to SGalovVSG`. Use `git push "https://x-access-token:$(gh auth token -u jicata)@github.com/jicata/interview-template.git" HEAD:<branch>`, which avoids switching the global active account and keeps the token out of `.git/config`. WHY: the failure is intermittent-looking — earlier pushes in the same session succeeded on a cached credential — so it reads as a flaky remote rather than an identity mismatch. Evidence: 403 on 2026-08-24 after several successful pushes to the same remote.
 
 > **The `Makefile` targets are broken on Windows — invoke the commands directly.** They call `.venv/bin/uvicorn` and `.venv/bin/pytest`; a Windows venv puts binaries in `.venv/Scripts/`. WHY: `make dev-backend` fails with a path error, which reads like a broken repo rather than a platform mismatch. Evidence: `Makefile`; verified 2026-08-24. This is upstream's bug, not ours — do not "fix" it in a PR to `origin`.
 

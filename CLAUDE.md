@@ -35,7 +35,8 @@ A smell you notice in code you're already looking at gets **one line and an offe
 
 ## Never
 
-- **Never push to `origin`.** `origin` is `prmsolutions/interview-template` — the interviewer's repo, read-only to you. Push to `fork` (`jicata/interview-template`). A stray branch or PR on their repo is visible to the people evaluating you and cannot be quietly undone.
+- **Never push, PR, or file an issue against `upstream`.** `upstream` is `prmsolutions/interview-template` — the interviewer's repo. `origin` is yours (`jicata/interview-template`), so a bare `git push` is safe. A stray branch or PR on theirs is visible to the people evaluating you and cannot be quietly undone.
+- **The default branch is `main`; the ship-* skills say `origin/master` in their prose.** Substitute `origin/main`. `/ship-issue`'s worktree setup runs that path literally and will fail otherwise.
 - **Never write to the database outside `db.transaction()`.** There is one process-wide `sqlite3` connection, so the implicit transaction is shared: two concurrent writers commit and roll back each other's partial work. Reads use `get_connection()` directly — `transaction()` holds a global lock. This is the one bug the template authors planted and then fixed (`b0a7929`), so assume it is the thing being watched.
 - **Never assume a test starts from the seeded state.** Tests import the same module-level connection the app uses and there is no per-test rollback, so a test that writes leaks rows into every later test in the process. Isolate in the test, never by weakening `db.py`.
 - **Never pre-build the feature you think is coming.** The seed data hints loudly at a reorder/replenishment feature, but a wrong guess has to be explained and deleted on the clock. Wait for the task.
