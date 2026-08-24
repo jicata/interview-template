@@ -22,10 +22,14 @@ doc_appetite: lean             # canon seeded: glossary + ADRs + architecture ma
 pipeline_tier: full            # HITL lane + autonomous afk lane both installed
 review_identity: app           # claude-reviewer-jicata[bot] — native APPROVE / REQUEST_CHANGES
 review_app_token_cmd: "GH_APP_ID=4515491 GH_APP_INSTALLATION_ID=151915759 GH_APP_PRIVATE_KEY_PATH=$HOME/.ssh/claude-reviewer-jicata.pem node $HOME/.claude/gh-app-token.js"
+coder_lens:                    # how a coder run resolves "the repo's composite coder lens"
+  default: coder-lens          # .claude/skills/coder-lens/SKILL.md — one lens covers both stacks here
+  backend: coder-lens          # backend/app/**  -> arch-layered + backend-python + relational-persistence
+  frontend: coder-lens         # frontend/src/** -> arch-frontend + frontend-vue
 workhorse_model: sonnet
 glossary: docs/UBIQUITOUS_LANGUAGE.md
 smell_routing: "file a GitHub issue on jicata/interview-template; never refactor in place (see doctrine/surface-dont-chase.md)"
-base_version: b281c72          # jicata/skills @ pluggable-doctrine-axes
+base_version: 69e9e33          # jicata/skills @ pluggable-doctrine-axes
 ```
 
 ## How to maintain this file (the fill-in convention)
@@ -41,6 +45,14 @@ base_version: b281c72          # jicata/skills @ pluggable-doctrine-axes
 This is a **live-coding interview sandbox**, cloned from a template the interviewing company (`prmsolutions`) publishes. The actual task is handed over verbally at the start of the session and is not in the repo. The full skill pipeline is installed deliberately, as a dress rehearsal of the normal working stack — not because a throwaway repo needs it.
 
 > **The task is unknown until the session starts — do not pre-build features.** The seed data strongly suggests a reorder/replenishment feature (each customer buys one product on a regular cadence; order 19 is an empty `draft` with no `order_date`; `pack_size` matches every historical `quantity`), but a guess that turns out wrong is worse than no code at all, because it must then be explained and deleted under time pressure. WHY: the README says only "your interviewer will share your task separately". Evidence: `README.md`; `backend/data/orders.csv` rows 1–19.
+
+## Coder lens routing
+
+`execute-issue`, `afk-execute-issue` and the `afk-coder` agent all implement "through the repo's composite coder lens", resolved from the `coder_lens` key above. **There is one lens here — `/coder-lens`** — because the repo is small enough that a single manifest covers both stacks; larger repos split it per stack.
+
+> **A coder run loads `/coder-lens` before writing code, every time.** It is the only artifact that knows both axis picks, so it is what composes `arch-layered` (placement) with `backend-python` (idiom). WHY: doctrine files are not skills and are never auto-loaded — without the lens naming them, `backend-python.md` reaches context only if a path rule happens to fire. Evidence: `.claude/doctrine/00-doctrine-index.md` → "How anything here reaches context".
+
+> **The path rules are the safety net, not the primary route.** `rules/backend-slices.md` fires automatically on `backend/app/**` and names `backend-python.md` inline along with its sharpest imperatives, so an agent working *without* invoking any skill still gets the load-bearing rules. Do not let that redundancy tempt you into thinning either one — they cover different failure modes: the rule covers ad-hoc edits, the lens covers pipeline runs.
 
 ## Architecture
 
