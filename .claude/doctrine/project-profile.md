@@ -27,10 +27,14 @@ coder_lens:                    # how a coder run resolves "the repo's composite 
   backend: coder-lens          # backend/app/**  -> arch-layered + backend-python + relational-persistence
   frontend: coder-lens         # frontend/src/** -> arch-frontend + frontend-vue
 default_branch: main           # NOT master. The afk pipeline's prose says `origin/master` throughout; resolve the real branch
-workhorse_model: sonnet
+models:                        # per-role tiers. Only `orchestrator` gates the session model (ship-* Step 0a);
+  orchestrator: opus           #   coder and reviewer are passed explicitly on dispatch and are INDEPENDENT of it
+  coder: sonnet                #   high-volume implementation against a written plan — the cheap seat
+  reviewer: opus               #   MUST NOT be weaker than the coder; see Merge gates
+workhorse_model: sonnet        # fallback for any role the map omits
 glossary: docs/UBIQUITOUS_LANGUAGE.md
 smell_routing: "file a GitHub issue on jicata/interview-template; never refactor in place (see doctrine/surface-dont-chase.md)"
-base_version: 69e9e33          # jicata/skills @ pluggable-doctrine-axes
+base_version: 0034c39          # jicata/skills @ pluggable-doctrine-axes
 ```
 
 ## How to maintain this file (the fill-in convention)
@@ -110,6 +114,12 @@ The `check_commands` above are the only gate. There is no CI, no branch protecti
 > **`reviewDecision` will still read `null` on this repo — read `latestReviews[].state` instead.** WHY: the field requires branch protection with a review requirement, which this repo does not have; a genuine App `CHANGES_REQUESTED` still leaves it null. Evidence: `setup/github-app.md` — "What it does **not** light up is the PR's `reviewDecision` field." The merge gate already reads `latestReviews`.
 
 > **The binding verdict remains the `**Verdict:**` marker in the review body**, per `.claude/skills/_shared/review-protocol.md`. The App identity only decides whether GitHub *also* records it natively. WHY: one contract works under both identities, so a token failure degrades the audit trail, not the gate.
+
+> **The reviewer runs a stronger tier than the coder, deliberately.** `models.coder: sonnet`, `models.reviewer: opus`. WHY: a reviewer no stronger than the coder cannot see what the coder could not see, so it rubber-stamps — which defeats the separate-dispatch design the ship-* skills call load-bearing. Evidence: `.claude/skills/ship-issue/SKILL.md` Critical Principle 3 and Rule 10.
+
+> **Expect more cleanup-issue residue as a result, not less.** A stronger reviewer raises findings a weaker coder may fail to satisfy across three rounds, which routes them to `/afk-concede-thread` (Axis-B) or the round-7 forced merge. That is the machinery working, not failing — but read the cleanup issue as *quality signal*, not noise, and if a run concedes repeatedly on the same theme, raise `models.coder` rather than lowering `models.reviewer`. Evidence: recorded 2026-08-24 when the per-role split was adopted; revisit after the first real run.
+
+> **`/ship-issue` requires the session to be on `models.orchestrator` (opus) — subagent tiers are unaffected by it.** The orchestrator passes `model` explicitly on every dispatch, so the coder still runs sonnet whatever the session is set to. WHY: Step 0a gates only the orchestrator role, so a working session no longer has to be downgraded to run the pipeline. Evidence: `ship-issue/SKILL.md` Step 0a.
 
 ## Deploy & environments
 
