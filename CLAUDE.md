@@ -29,6 +29,10 @@ cd frontend && npm run build
 
 There is no CI. These are the only gate — an agent raising "there is no CI" as a blocker is noise. `npm run dev` does **not** typecheck; `vue-tsc` is a separate, mandatory gate.
 
+## Ambient smells
+
+A smell you notice in code you're already looking at gets **one line and an offer to log it** — never an unasked refactor. Log it as an issue on the fork. This is sharper here than in a normal repo: the clock is running, and a refactor nobody asked for spends it. Full rule: `.claude/doctrine/surface-dont-chase.md`.
+
 ## Never
 
 - **Never push to `origin`.** `origin` is `prmsolutions/interview-template` — the interviewer's repo, read-only to you. Push to `fork` (`jicata/interview-template`). A stray branch or PR on their repo is visible to the people evaluating you and cannot be quietly undone.

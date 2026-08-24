@@ -2,16 +2,17 @@
 
 **GENERATED.** This is a manifest over what `.claude/doctrine/` actually contains — not prose. Regenerate it when doctrine is added, removed, or renamed (`/skill-sync`). Do not hand-write rules here; they belong in a doctrine file or in `project-profile.md`.
 
-## Always on
+## How anything here reaches context
 
-Loaded every session, no trigger needed.
+**Nothing in this directory is auto-loaded.** The harness loads exactly two things by itself: `CLAUDE.md` (every session) and `.claude/rules/*.md` carrying `paths:` frontmatter (when a matching file is opened). Every other file below arrives only because something already in context told an agent to read it.
 
-| File | Why it's always on |
+| File | How it actually arrives |
 | --- | --- |
-| `project-profile.md` | The overlay: machine-readable repo facts + this repo's scar tissue. Every other file defers to it for repo specifics. |
-| `documentation-first.md` | Consult docs before code. The canon here is the full lean three — glossary, ADRs, architecture map — all seeded under `docs/`. |
-| `AXES.md` | The composition contract: which core owns placement vs idiom, and how the two resolve when they disagree. |
-| `surface-dont-chase.md` | A smell noticed in already-loaded context gets one line and an offer to log it — never an unasked refactor. Sharper than usual here: this is a timed interview repo, and an unasked refactor spends the clock. |
+| `project-profile.md` | Named in `CLAUDE.md` and by all 4 rules — the closest thing to always-on. Read it every session. |
+| `00-doctrine-index.md` | Named in `CLAUDE.md`. This file. |
+| `surface-dont-chase.md` | Its imperative is **inlined in `CLAUDE.md`** (Ambient smells), so the rule applies even if this file is never read. |
+| `AXES.md` | Loaded by `rules/skill-authoring.md` when anything under `.claude/**` is touched. |
+| Everything else | On trigger — the table below, or a rule, or a skill that names it. |
 
 ## Load on trigger
 
@@ -23,7 +24,7 @@ Loaded every session, no trigger needed.
 | Write or change **any Python** | `backend-python.md` (idiom) + `arch-layered.md` (placement) + profile → Persistence, Testing |
 | **Review** a PR (Standards axis) | `fowler-smell-baseline.md` + whichever of the above match the changed paths |
 | Write or edit **a skill, agent, or doctrine file** | `writing-skills.md` + `writing-skills-glossary.md` |
-| Explain a change, write a teaching briefing, or justify an approach in prose | `how-to-explain.md` |
+| Explain a change, write a teaching briefing, or justify an approach in prose | `how-to-explain.md` — loaded by `/explain-diff-html`, `/wait-what`, and any expand/log briefing |
 | Name a domain concept, or argue about what something should be called | profile → Domain language + `docs/UBIQUITOUS_LANGUAGE.md` |
 | Record a decision that outlives the session | `docs/adr/` + `documentation-first.md` |
 
