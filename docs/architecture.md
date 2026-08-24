@@ -24,11 +24,13 @@ App.vue
                                                 transaction() to write
 ```
 
-## Slices
+## Layers and features
 
-A slice is a route file plus a feature package. Adding one means adding a row here.
+**Layered**, with the application layer subdivided by feature. Dependencies point downward only: `api` → `features` → `models`/`db`. No ports, no inversion.
 
-| Slice | Route | Handler | Schemas |
+A feature is a route module in `api/` plus a package in `features/`. Adding one means adding a row here.
+
+| Feature | Route (transport) | Handler (application) | Schemas |
 | --- | --- | --- | --- |
 | `hello` | `app/api/hello.py` — `GET /hello?name=` | `app/features/hello/handler.py` | `app/features/hello/schemas.py` |
 

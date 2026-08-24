@@ -4,10 +4,10 @@
 
 ```yaml
 stack: "Python 3.12 / FastAPI + stdlib sqlite3 (in-memory), pytest + httpx; frontend Vite 5 + Vue 3.4 + TypeScript 5.3 (no component library, no router, no store)"
-architecture_core: arch-vsa        # owns PLACEMENT — slice boundaries, colocation, promotion
+architecture_core: arch-layered    # owns PLACEMENT — layer boundaries, downward dependencies, where queries live
 backend_core: backend-python      # owns IDIOM — typing, async choice, error translation, pytest
 frontend_core: frontend-vue       # paired with arch-frontend.md (framework-neutral structure)
-architecture: "Feature-sliced backend — app/api/<feature>.py (thin route) -> app/features/<feature>/{handler,schemas}.py, with app/models/ dataclasses; frontend src/{api,App.vue}"
+architecture: "Layered with a feature-subdivided application layer — app/api/ (transport) -> app/features/<feature>/ (business logic) -> app/models/ (entities) + app/db.py (data). Dependencies point downward; no ports. Frontend src/{api,App.vue}"
 tracker: "GitHub issues (jicata/interview-template) — the FORK. Upstream prmsolutions/interview-template is read-only; see Deploy & environments"
 check_commands:
   - "cd backend && .venv/Scripts/python -m pytest"       # Windows venv layout; POSIX is .venv/bin/
@@ -25,7 +25,7 @@ review_app_token_cmd: "GH_APP_ID=4515491 GH_APP_INSTALLATION_ID=151915759 GH_APP
 workhorse_model: sonnet
 glossary: docs/UBIQUITOUS_LANGUAGE.md
 smell_routing: "file a GitHub issue on jicata/interview-template; never refactor in place (see doctrine/surface-dont-chase.md)"
-base_version: 0401cdc          # jicata/skills @ pluggable-doctrine-axes
+base_version: b281c72          # jicata/skills @ pluggable-doctrine-axes
 ```
 
 ## How to maintain this file (the fill-in convention)
@@ -41,6 +41,18 @@ base_version: 0401cdc          # jicata/skills @ pluggable-doctrine-axes
 This is a **live-coding interview sandbox**, cloned from a template the interviewing company (`prmsolutions`) publishes. The actual task is handed over verbally at the start of the session and is not in the repo. The full skill pipeline is installed deliberately, as a dress rehearsal of the normal working stack — not because a throwaway repo needs it.
 
 > **The task is unknown until the session starts — do not pre-build features.** The seed data strongly suggests a reorder/replenishment feature (each customer buys one product on a regular cadence; order 19 is an empty `draft` with no `order_date`; `pack_size` matches every historical `quantity`), but a guess that turns out wrong is worse than no code at all, because it must then be explained and deleted under time pressure. WHY: the README says only "your interviewer will share your task separately". Evidence: `README.md`; `backend/data/orders.csv` rows 1–19.
+
+## Architecture
+
+**Layered, with the application layer subdivided by feature.** Three horizontal groupings — `app/api/` (transport), `app/features/<feature>/` (business logic), `app/models/` + `app/db.py` (entities and data) — with dependencies pointing **downward only**. There are no ports and no dependency inversion, which is what makes this `arch-layered` rather than `arch-clean`/`arch-onion`. Base doctrine: `.claude/doctrine/arch-layered.md`.
+
+> **A slice is deliberately split across `api/` and `features/` — do not "fix" it by moving the route into the feature package.** The README states the pattern explicitly: "a thin API route calls a feature handler, which holds the business logic." WHY: it looks like an incomplete vertical slice and invites a helpful restructure of the interviewer's own scaffold, which spends the clock and reads as not doing the task. Evidence: `README.md` project structure; `app/api/hello.py` → `app/features/hello/handler.py`.
+
+> **`models/` is imported by nothing and `db.py` only by `main.py`, for its import side-effect.** The `hello` slice demonstrates the routing pattern and stops short of the data pattern — the seam between a handler and the database does not exist yet. WHY: this is the deliberate hole, not an oversight; the README says "how you read and write the seeded data is your call." Evidence: verified 2026-08-24 — no module imports `app.models`; `main.py` imports `app.db` under `noqa: F401 — triggers CSV load at startup`.
+
+> **Put a feature's queries with that feature (`app/features/<f>/queries.py`), not in a generic repository.** Promote to a shared data-access module only when a *second* feature actually needs the same query. WHY: `arch-layered` rule 4 and the README's open question point the same way, and a generic repository built for one consumer is the abstraction the interviewer left out on purpose. Evidence: `.claude/doctrine/arch-layered.md` → rules 4 and 6; `README.md`.
+
+> **Do not introduce a single port/Protocol seam.** Either the app is layered or it is inverted; one hand-rolled interface in an otherwise-layered app buys nothing and confuses which architecture applies. If the task genuinely demands substitutability, say so out loud and invert deliberately. Evidence: `arch-layered.md` anti-pattern 9.
 
 ## Security & live-data safety
 

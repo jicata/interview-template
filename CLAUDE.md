@@ -2,7 +2,7 @@
 
 Python 3.12 · FastAPI · stdlib `sqlite3` (in-memory, seeded from CSV at import) · pytest.
 Frontend: Vite · Vue 3 `<script setup>` · TypeScript. No ORM, no migrations, no component library.
-**Feature-sliced backend** — `app/api/<feature>.py` is a thin route that calls `app/features/<feature>/handler.py`. The `hello` slice is the worked example and the shape of record.
+**Layered, application layer subdivided by feature** — `app/api/` (transport) → `app/features/<feature>/` (business logic) → `app/models/` + `app/db.py` (entities and data). Dependencies point **downward only**; there are no ports. The `hello` feature is the worked example and the shape of record — note it demonstrates routing but not data access, which is the hole you fill.
 
 This repo is a **live-coding interview sandbox**. The task is handed over verbally when the session starts; it is not in the repo.
 
@@ -15,7 +15,7 @@ This repo is a **live-coding interview sandbox**. The task is handed over verbal
 
 ## Canon — three durable documents
 
-- **`docs/architecture.md`** — the map: stack, slice table, request path. Positions things; does not describe them.
+- **`docs/architecture.md`** — the map: stack, layer table, request path. Positions things; does not describe them.
 - **`docs/UBIQUITOUS_LANGUAGE.md`** — domain terms. Use these names in code, tests and PRs.
 - **`docs/adr/`** — decisions that outlive the session, one file each.
 

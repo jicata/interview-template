@@ -20,7 +20,7 @@ description: The composite lens every coder run loads before writing code in thi
 | Changing | Also load |
 | --- | --- |
 | Any Python under `backend/app/**` | `.claude/doctrine/backend-python.md` — typing, the `def` vs `async def` choice, context managers, exception chaining, error translation at the route boundary, pytest discipline |
-| A new or changed feature slice — `app/api/<f>.py` + `app/features/<f>/**` | `.claude/doctrine/arch-vsa.md` + profile → What this repo is for |
+| A new or changed feature — `app/api/<f>.py` + `app/features/<f>/**` | `.claude/doctrine/arch-layered.md` + profile → Architecture. The route lives in `api/` **by design** — do not move it into the feature package |
 | `app/db.py`, `data/*.csv`, or any handler that writes | `.claude/doctrine/relational-persistence.md` + profile → Persistence |
 | Anything under `backend/tests/**` | profile → Testing — shared-connection state leaks across tests |
 | Anything under `frontend/src/**` | `.claude/doctrine/arch-frontend.md` (structure) + `.claude/doctrine/frontend-vue.md` (idiom) + profile → Frontend |
@@ -36,7 +36,7 @@ Ahead of any general doctrine, because both are invisible in a green test run:
 ## Conflict resolution
 
 - **Profile beats doctrine.** A constraint in `project-profile.md` is this repo's recorded reality; a base doctrine file is the generic default.
-- **Architecture wins on placement, language wins on idiom.** Where a file goes and what may import it: `arch-vsa.md` / `arch-frontend.md`. What it is called and how it is written: `backend-python.md` / `frontend-vue.md`. See `.claude/doctrine/AXES.md`.
+- **Architecture wins on placement, language wins on idiom.** Where a file goes and what may import it: `arch-layered.md` / `arch-frontend.md`. What it is called and how it is written: `backend-python.md` / `frontend-vue.md`. See `.claude/doctrine/AXES.md`.
 - **Behaviour beats implementation.** For test design, TDD's behaviour-driven approach wins — test user-visible behaviour, not internals.
 - **The worked example beats inference.** Where both are silent, match `app/api/hello.py` + `app/features/hello/`. Consistency with the template's own shape is what a reviewer reads as fluency.
 

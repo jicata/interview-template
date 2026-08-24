@@ -17,10 +17,10 @@ Loaded every session, no trigger needed.
 
 | Trigger — what you are about to do | Load |
 | --- | --- |
-| Add, move, or rename a file under `backend/app/features/**` or `backend/app/api/**` | `arch-vsa.md` — slice boundaries, colocation, isolation between slices |
+| Add, move, or rename a file under `backend/app/features/**` or `backend/app/api/**` | `arch-layered.md` — layer boundaries, downward-only dependencies, where queries live |
 | Touch **schema, seed CSVs, queries, or anything that writes** | `relational-persistence.md` + profile → Persistence, Testing |
 | Write or change **anything under `frontend/src/**`** | `arch-frontend.md` (structure) + `frontend-vue.md` (idiom) + profile → Frontend |
-| Write or change **any Python** | `backend-python.md` (idiom) + `arch-vsa.md` (placement) + profile → Persistence, Testing |
+| Write or change **any Python** | `backend-python.md` (idiom) + `arch-layered.md` (placement) + profile → Persistence, Testing |
 | **Review** a PR (Standards axis) | `fowler-smell-baseline.md` + whichever of the above match the changed paths |
 | Write or edit **a skill, agent, or doctrine file** | `writing-skills.md` + `writing-skills-glossary.md` |
 | Explain a change, write a teaching briefing, or justify an approach in prose | `how-to-explain.md` |
@@ -33,7 +33,7 @@ Loaded every session, no trigger needed.
 
 | Path | Doctrine | Rule file |
 | --- | --- | --- |
-| `backend/app/api/**`, `backend/app/features/**`, `backend/app/models/**` | `arch-vsa.md`, `backend-python.md` | `rules/backend-slices.md` |
+| `backend/app/api/**`, `backend/app/features/**`, `backend/app/models/**` | `arch-layered.md`, `backend-python.md` | `rules/backend-slices.md` |
 | `backend/app/db.py`, `backend/data/**` | `relational-persistence.md` | `rules/persistence.md` |
 | `backend/tests/**` | profile → Testing | `rules/persistence.md` |
 | `frontend/src/**` | `arch-frontend.md`, `frontend-vue.md` | `rules/frontend.md` |
@@ -45,7 +45,7 @@ Doctrine cores plug in along independent axes (`.claude/doctrine/AXES.md`). This
 
 | Axis | Core | Owns |
 | --- | --- | --- |
-| Backend architecture | `arch-vsa.md` | placement — where a file lives, what may import what |
+| Backend architecture | `arch-layered.md` | placement — layer boundaries, downward-only dependencies, where queries live |
 | Backend language | `backend-python.md` | idiom — typing, async choice, error translation, pytest |
 | Frontend architecture | `arch-frontend.md` | placement — page/component boundary, promotion |
 | Frontend framework | `frontend-vue.md` | idiom — `ref` vs `reactive`, composables, the type gate |
