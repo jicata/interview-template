@@ -33,7 +33,7 @@ A **flow** is a path through the skills. Most work travels the main flow; on-ram
 - Only Axis-B threads left after max iterations → `/concede-pr` files the tech-debt issue and approves.
 - A mid-flight merge or rebase conflict → `/resolving-merge-conflicts`.
 - A `[ship-cleanup]` issue accumulated residue → `/drain-cleanup`.
-- A run's **Execution conformance** block flagged a review-identity mismatch, or a review posted as the PR author instead of the App → `/fix-review-identity`. Expect this until the App is installed on this fork — see profile → Merge gates.
+- A run's **Execution conformance** block flagged a review-identity mismatch, or a review posted as the PR author instead of the App → `/fix-review-identity`. Reviews should post as `claude-reviewer-jicata[bot]`; a review appearing under your own account means the token command failed and the gate silently fell back to comment-only.
 
 ## Understanding the system
 

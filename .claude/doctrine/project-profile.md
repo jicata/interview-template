@@ -20,7 +20,8 @@ chassis: none
 legacy_oracle: none
 doc_appetite: lean             # canon seeded: glossary + ADRs + architecture map
 pipeline_tier: full            # HITL lane + autonomous afk lane both installed
-review_identity: self          # PENDING flip to `app` — see Merge gates
+review_identity: app           # claude-reviewer-jicata[bot] — native APPROVE / REQUEST_CHANGES
+review_app_token_cmd: "GH_APP_ID=4515491 GH_APP_INSTALLATION_ID=151915759 GH_APP_PRIVATE_KEY_PATH=$HOME/.ssh/claude-reviewer-jicata.pem node $HOME/.claude/gh-app-token.js"
 workhorse_model: sonnet
 glossary: docs/UBIQUITOUS_LANGUAGE.md
 smell_routing: "file a GitHub issue on jicata/interview-template; never refactor in place (see doctrine/surface-dont-chase.md)"
@@ -75,9 +76,11 @@ The `check_commands` above are the only gate. There is no CI, no branch protecti
 
 > **An agent raising "there is no CI" as a blocker is noise; suppress it.** WHY: a sandbox repo that exists for one interview session will never have CI stood up. Evidence: Q12 interview, 2026-08-24.
 
-> **PENDING — `review_identity` is `self` until the App is installed on this fork.** The `claude-reviewer-jicata` App (App ID `4515491`, key `~/.ssh/claude-reviewer-jicata.pem`, installation `151915759`) exists and mints tokens correctly, but its repository selection currently covers only `jicata/Brochures`, verified 2026-08-24 via `GET installation/repositories`. To flip: add `jicata/interview-template` at <https://github.com/settings/installations/151915759>, re-verify per `setup/github-app.md` §5, then set `review_identity: app` and add `review_app_token_cmd: "GH_APP_ID=4515491 GH_APP_INSTALLATION_ID=151915759 GH_APP_PRIVATE_KEY_PATH=$HOME/.ssh/claude-reviewer-jicata.pem node $HOME/.claude/gh-app-token.js"`. WHY: writing `app` against an installation that cannot see the repo makes every review fail at token-exchange instead of falling back cleanly. Evidence: `setup/SKILL.md` §3 — "an unverified command silently falls the repo back to `self`".
+> **Reviews post as `claude-reviewer-jicata[bot]`, so `APPROVE` and `REQUEST_CHANGES` land natively.** App ID `4515491`, installation `151915759`, key `~/.ssh/claude-reviewer-jicata.pem`, minted by `~/.claude/gh-app-token.js`. WHY: GitHub rejects APPROVE/REQUEST_CHANGES from a PR's own author, so a self-authored review can only ever be `COMMENTED`. Evidence: verified 2026-08-24 — `GET installation/repositories` returns both `jicata/Brochures` and `jicata/interview-template`, and the minted token reaches this repo's `pulls` endpoint.
 
-> Under `self`, every review posts as `COMMENTED` and `reviewDecision` stays `null`. The binding verdict is the `**Verdict:**` marker in the review body, per `.claude/skills/_shared/review-protocol.md`. WHY: GitHub rejects APPROVE/REQUEST_CHANGES from the PR author.
+> **`reviewDecision` will still read `null` on this repo — read `latestReviews[].state` instead.** WHY: the field requires branch protection with a review requirement, which this repo does not have; a genuine App `CHANGES_REQUESTED` still leaves it null. Evidence: `setup/github-app.md` — "What it does **not** light up is the PR's `reviewDecision` field." The merge gate already reads `latestReviews`.
+
+> **The binding verdict remains the `**Verdict:**` marker in the review body**, per `.claude/skills/_shared/review-protocol.md`. The App identity only decides whether GitHub *also* records it natively. WHY: one contract works under both identities, so a token failure degrades the audit trail, not the gate.
 
 ## Deploy & environments
 
