@@ -1,15 +1,15 @@
 ---
 name: ship-issue
-description: Top-level autonomous orchestrator that ships a single bug or enhancement end-to-end. Dispatches afk-coder to implement and address feedback, dispatches afk-reviewer for independent review, applies per-thread concession after 3 rejects (Axis-B only), forces merge after 7 rounds with all-blocker concession. Light-flow counterpart to /ship-feature — one issue, one PR off master, no PRD scaffolding. Never halts; lazy-creates a cleanup issue only if anything is conceded or force-merged. Runs orchestrator and subagents on the profile's configured workhorse model. Use when the user runs /ship-issue <issue-number> on a single bug/enhancement issue (typically authored by /log-issue).
+description: Top-level autonomous orchestrator that ships a single bug or enhancement end-to-end. Dispatches afk-coder to implement and address feedback, dispatches afk-reviewer for independent review, applies per-thread concession after 3 rejects (Axis-B only), forces merge after 7 rounds with all-blocker concession. Light-flow counterpart to /ship-feature — one issue, one PR off the default branch, no PRD scaffolding. Never halts; lazy-creates a cleanup issue only if anything is conceded or force-merged. Runs each role on the profile's configured per-role model (models.orchestrator / models.coder / models.reviewer). Use when the user runs /ship-issue <issue-number> on a single bug/enhancement issue (typically authored by /log-issue).
 ---
 
 # Ship Issue
 
-(Extracted 2026-07 from the donor stack. Pipeline-generic; repo facts — check commands, workhorse model — live in the repo's `.claude/doctrine/project-profile.md` overlay. `master` throughout denotes the repo's **default branch**.)
+(Extracted 2026-07 from the donor stack. Pipeline-generic; repo facts — check commands, per-role models — live in the repo's `.claude/doctrine/project-profile.md` overlay. `master` throughout denotes the repo's **default branch**.)
 
 Autonomous orchestrator for shipping a single bug or enhancement end-to-end. Light-flow parallel to `/ship-feature`. The state machine is the same coder↔reviewer loop with the same 3-reject / 7-round bounds, scaled down to a single issue / single PR / direct-to-master.
 
-`/ship-feature` ships PRDs (many issues, many PRs, a base branch, a finalize step). `/ship-issue` ships single issues (one PR off master, no base branch, no finalize).
+`/ship-feature` ships PRDs (many issues, many PRs, a base branch, a finalize step). `/ship-issue` ships single issues (one PR off the default branch, no base branch, no finalize).
 
 ## Invocation
 
@@ -19,20 +19,26 @@ Autonomous orchestrator for shipping a single bug or enhancement end-to-end. Lig
 
 If no issue number, ask. Do not guess.
 
+**Default branch.** Wherever this skill writes `master`, use the repo's **actual default branch** — resolve it once at Step 1 (`gh repo view --json defaultBranchRef --jq .defaultBranchRef.name`) and substitute it everywhere below, including the worktree base and the PR target. JSON `result` names stay verbatim regardless. The same substitution rule governs `/afk-execute-issue`; this skill is the entry point, so resolving it here is what makes the whole run consistent.
+
+**Push remote.** Likewise `origin` means **the writable remote for this repo**, which the profile's `tracker` names. In a fork layout `origin` is your fork and the source repo is `upstream` — never fetch a base branch from, or push to, a remote you do not own.
+
 ## Critical principles (read first)
 
 1. **The PR is never abandoned.** It merges clean, with conceded threads, or via forced merge after concession. Residue is logged to a lazily-created cleanup issue.
 2. **Never halt for human input.** Every unresolvable condition becomes a cleanup-issue entry; the loop continues to the next state.
 3. **Independent review is load-bearing.** Coder and Reviewer are separate `Agent` dispatches. Never collapsed.
 4. **GitHub is the durable state.** No local state file. Resumability via reconciliation on re-invocation.
-5. **Workhorse model end-to-end.** Both the orchestrator and the Coder/Reviewer subagents run on the profile's `workhorse_model`. Premium models are forbidden in this flow.
+5. **Per-role models, resolved from the profile.** Each role runs on the model the profile's `models` map assigns it — `orchestrator`, `coder`, `reviewer` — falling back to `workhorse_model` for any role the map omits. The **reviewer must never be weaker than the coder**: a reviewer that cannot see what the coder could not see rubber-stamps, which defeats the independent-review dispatch entirely. Spending up on the reviewer is the highest-value tier choice in this flow.
 6. **The user's main repo checkout is never touched.** All implementation, branching, pushing, and review happens inside a dedicated sibling worktree at `../<repo>-ship-<issue-number>`. The user can keep working on `master` (or any other branch) in their main checkout for the duration of the run.
 
 ## Step 0a — Model preflight (fail-fast)
 
-Identical to `/ship-feature` Step 0a. Must run on the profile's workhorse model. If the active model is not the profile's `workhorse_model`, stop with:
+Identical to `/ship-feature` Step 0a. Must run on the profile's `models.orchestrator` (fallback `workhorse_model`). If the active model differs, stop with:
 
-> /ship-issue must run on the profile's workhorse model (cost + architecture decision). Active model is `<X>`, profile says `<workhorse_model>`. Run `/model <workhorse_model>`, then re-invoke `/ship-issue <issue-number>`.
+> /ship-issue must run on the profile's orchestrator model. Active model is `<X>`, profile says `<models.orchestrator>`. Run `/model <models.orchestrator>`, then re-invoke `/ship-issue <issue-number>`.
+
+**Subagent tiers are independent of the session model** — coder and reviewer receive their tier explicitly on dispatch.
 
 ## Step 0b — Permission preflight (fail-fast)
 
@@ -99,11 +105,12 @@ Cases:
    WORKTREE_PATH="$(dirname "$REPO_ROOT")/${REPO_BASE}-ship-<issue-number>"
    ```
 2. If a worktree already exists at that path (prior crashed run, or active resume), **reuse it**. Verify with `git worktree list --porcelain` matching on the path. Do not delete or recreate — the resumption logic relies on GitHub state as authoritative; the worktree just holds the local checkout.
-3. Otherwise create it detached at `origin/master` (detached HEAD so this worktree never claims the `master` branch — the user's main repo keeps that):
+3. Otherwise create it detached at `origin/<default-branch>` (detached HEAD so this worktree never claims the default branch — the user's main repo keeps that):
    ```bash
+   DEFAULT_BRANCH="$(gh repo view --json defaultBranchRef --jq .defaultBranchRef.name)"
    git fetch origin
    git worktree prune
-   git worktree add --detach "$WORKTREE_PATH" origin/master
+   git worktree add --detach "$WORKTREE_PATH" "origin/$DEFAULT_BRANCH"
    ```
 4. **All subsequent Agent dispatches and any local git/gh operations the orchestrator runs must use `$WORKTREE_PATH` as their working directory.** The orchestrator passes the path into each Agent prompt; agents `cd` into it before any tool use.
 
@@ -127,10 +134,10 @@ Otherwise dispatch `afk-coder` to run `/afk-execute-issue <issue-number> --singl
 ```
 Agent(
   subagent_type: "afk-coder",      // or "general-purpose" with prompt prefix
-  model: "<workhorse_model>",       // MANDATORY — the profile's value
+  model: "<models.coder>",          // MANDATORY — profile models.coder (fallback workhorse_model)
   run_in_background: true,          // MANDATORY — runs in background, visible in the agent display
   description: "Implement issue #<n>",
-  prompt: "Your working directory is `<WORKTREE_PATH>` — a dedicated git worktree, not the user's main repo checkout. Before any tool use, `cd <WORKTREE_PATH>` so all subsequent Bash, file edits, and git operations stay inside the worktree. Then run /afk-execute-issue <issue-number> --single. Branch directly off origin/master (no PRD base branch). Implement via TDD. Open a PR targeting master with 'Closes #<issue-number>'. Emit your structured JSON return."
+  prompt: "Your working directory is `<WORKTREE_PATH>` — a dedicated git worktree, not the user's main repo checkout. Before any tool use, `cd <WORKTREE_PATH>` so all subsequent Bash, file edits, and git operations stay inside the worktree. Then run /afk-execute-issue <issue-number> --single. Branch directly off origin/<default-branch> (no PRD base branch) — resolve it with `gh repo view --json defaultBranchRef`. Implement via TDD. Open a PR targeting that same default branch with 'Closes #<issue-number>'. Emit your structured JSON return."
 )
 ```
 
@@ -150,7 +157,7 @@ Dispatch `afk-reviewer` to run `/afk-review-pr <pr_number>` (Axis A + B) as a vi
 ```
 Agent(
   subagent_type: "afk-reviewer",
-  model: "<workhorse_model>",       // MANDATORY — the profile's value
+  model: "<models.reviewer>",       // MANDATORY — profile models.reviewer (fallback workhorse_model)
   run_in_background: true,          // MANDATORY — runs in background, visible in the agent display
   description: "Review PR #<n> round <r>",
   prompt: "Your working directory is `<WORKTREE_PATH>` — the dedicated worktree for this ship-issue run. Before any tool use, `cd <WORKTREE_PATH>`. Then run /afk-review-pr <pr-number>. <If r > 1: This is round <r>; you have prior threads — arbitrate Coder pushback replies.> Emit your structured JSON return."
@@ -212,7 +219,7 @@ Otherwise:
 /afk-merge-pr <pr_number> --single
 ```
 
-The `--single` flag tells `/afk-merge-pr` the PR targeting master is intentional (light-flow), so the `structural_bug_master_target` guard does not trip.
+The `--single` flag tells `/afk-merge-pr` the PR targeting the default branch is intentional (light-flow), so the `structural_bug_master_target` guard does not trip.
 
 Parse the return:
 - `result: merged` → set `outcome = clean` (or `axis_b_residue` / `axis_a_residue` / `force_merged` if concessions were applied), GO TO DONE
@@ -296,7 +303,7 @@ Body and entry format identical to `/ship-feature`'s template (see [`examples/cl
 
 ## Subagent dispatch — implementation
 
-Identical contract to `/ship-feature`. Every **first-time** `Agent` dispatch (NEXT's Coder, REVIEW round 1's Reviewer) MUST pass the profile's `workhorse_model` explicitly **and `run_in_background: true`** so it appears in the live agent display and the operator can watch it. The orchestrator drives on the harness's completion notification for each child — it does **not** poll, sleep-wait, or arm any `ScheduleWakeup` watchdog. If a child ever appears stuck, the operator sees it frozen in the display and intervenes; a slow-but-working child shows ongoing tool activity and is left alone. Prefer `subagent_type: "afk-coder"` / `"afk-reviewer"`; fall back to `"general-purpose"` with a prompt prefix referencing the agent definition file if the harness doesn't have named subagent types.
+Identical contract to `/ship-feature`. Every **first-time** `Agent` dispatch (NEXT's Coder, REVIEW round 1's Reviewer) MUST pass the role's model from the profile's `models` map explicitly — `models.coder` for the Coder, `models.reviewer` for the Reviewer — **and `run_in_background: true`** so it appears in the live agent display and the operator can watch it. The orchestrator drives on the harness's completion notification for each child — it does **not** poll, sleep-wait, or arm any `ScheduleWakeup` watchdog. If a child ever appears stuck, the operator sees it frozen in the display and intervenes; a slow-but-working child shows ongoing tool activity and is left alone. Prefer `subagent_type: "afk-coder"` / `"afk-reviewer"`; fall back to `"general-purpose"` with a prompt prefix referencing the agent definition file if the harness doesn't have named subagent types.
 
 **Both Coder and Reviewer are round-persistent, not round-fresh.** Once a Coder or Reviewer agent exists for a PR, every later round resumes it via `SendMessage` to its agent id — never a new `Agent(...)` call — so it keeps the context it already built instead of cold-reading the PR from scratch each round. "Coder and Reviewer must be separate dispatches" (Critical Rule 9) means separate *from each other*, not a fresh spawn *per round*. Track both agent ids in working memory (`coder_agent_id`, `reviewer_agent_id`) the moment each is first dispatched.
 
@@ -313,7 +320,7 @@ The inline `/afk-merge-pr` and `/afk-concede-thread` steps (run in the orchestra
 7. **Always reconcile from GitHub on re-invocation.** An open PR for the issue is adopted, not duplicated.
 8. **Always emit final report to chat AND issue comment.**
 9. **Coder and Reviewer must be separate `Agent` dispatches, run in the background** (`run_in_background: true`) so both are visible in the agent display. Independence is the design. Drive on completion notifications; never poll or arm a wakeup. If a child wedges, the operator sees it frozen in the display and intervenes.
-10. **Workhorse model end-to-end.** Both orchestrator and subagents. Every dispatch passes the profile's `workhorse_model` explicitly.
+10. **Per-role models.** The orchestrator runs on `models.orchestrator`; every dispatch passes the role's model (`models.coder` / `models.reviewer`) explicitly. The reviewer is never weaker than the coder.
 11. **Never adopt a PR for a different issue.** Reconciliation searches by `Fixes #<issue-number>`; if the only open PR doesn't match, treat as no PR.
 12. **Refuse PRD children.** Issues with `## Parent PRD` are explicitly redirected to `/ship-feature`.
 
@@ -335,7 +342,7 @@ The inline `/afk-merge-pr` and `/afk-concede-thread` steps (run in the orchestra
 | Aspect | `/ship-feature` | `/ship-issue` |
 |---|---|---|
 | Input | PRD issue with children | Single bug/enhancement issue |
-| Branching | Per-PRD base branch | Direct off master |
+| Branching | Per-PRD base branch | Direct off the default branch |
 | Loop | NEXT_CHILD → REVIEW → ADDRESS → MERGE_CHILD → FINALIZE_PRD | NEXT → REVIEW → ADDRESS → MERGE → DONE |
 | Cleanup issue | Always created lazily | Created lazily **only on residue** |
 | Finalization | PRD branch → master PR | None — PR merges into master directly |

@@ -34,7 +34,7 @@ models:                        # per-role tiers. Only `orchestrator` gates the s
 workhorse_model: sonnet        # fallback for any role the map omits
 glossary: docs/UBIQUITOUS_LANGUAGE.md
 smell_routing: "file a GitHub issue on jicata/interview-template; never refactor in place (see doctrine/surface-dont-chase.md)"
-base_version: 0034c39          # jicata/skills @ pluggable-doctrine-axes
+base_version: a92a860          # jicata/skills @ pluggable-doctrine-axes
 ```
 
 ## How to maintain this file (the fill-in convention)
@@ -81,7 +81,7 @@ The one outward-facing constraint:
 
 > **Never push, PR, or file an issue against `upstream`.** It is the repo the people evaluating you can see, and nothing there can be quietly undone. Evidence: same.
 
-> **The default branch is `main`, but the pipeline's prose says `master` everywhere.** `/afk-execute-issue` carries the escape hatch — "where this skill says `master`, use the repo's actual default branch (resolve once: `gh repo view --json defaultBranchRef`)" — but **`/ship-issue` does not**, and its worktree setup runs `git worktree add --detach "$WORKTREE_PATH" origin/master` literally, which fails here. Substitute `origin/main` wherever a ship-* skill says `origin/master`. WHY: the inconsistency is a base-library defect, not a repo quirk; fixing it locally would edit a read-only base file. Evidence: `ship-issue/SKILL.md` line 106 vs `afk-execute-issue/SKILL.md` line 16; verified 2026-08-24 — `defaultBranchRef` is `main`.
+> **The default branch is `main`, and the ship-* skills now resolve it rather than assuming.** `/ship-issue` reads `gh repo view --json defaultBranchRef` at Step 1 and substitutes it everywhere, including the worktree base and the PR target; `origin` likewise means the writable remote the `tracker` key names. WHY: it previously ran `git worktree add --detach "$WT" origin/master` literally and died at worktree creation on any `main` repo. Evidence: fixed upstream in `jicata/skills@dcb4742`; this repo carries the fixed copy.
 
 ## Persistence
 
