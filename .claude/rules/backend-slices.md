@@ -17,3 +17,4 @@ Full doctrine: `.claude/doctrine/arch-layered.md` (placement) + `.claude/doctrin
 - **Route paths carry no `/api` prefix.** Vite strips it in the proxy; mirroring it here yields a 404 that reads like a routing bug.
 - **`app/models/` dataclasses are entities, not ORM rows.** Nothing maps `sqlite3.Row` to them automatically — if a slice wants one, it constructs it. Adding a generic mapper is a design decision, not a refactor.
 - **Do not create a shared/ or common/ dumping ground for a single caller.** Isolate between slices; duplicate before you couple.
+- **A route or response-schema change means regenerating the wire contract in the same commit** — `cd backend && python scripts/gen_postman.py`. It is a `check_command`, so drift fails the build, and a wire change with no contract delta is a review finding. Never hand-edit the generated JSON.

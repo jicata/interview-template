@@ -13,6 +13,7 @@ check_commands:
   - "cd backend && .venv/Scripts/python -m pytest"       # Windows venv layout; POSIX is .venv/bin/
   - "cd frontend && npx vue-tsc --noEmit"                # the type gate
   - "cd frontend && npm run build"                       # vue-tsc + vite build
+  - "cd backend && .venv/Scripts/python scripts/gen_postman.py --check"   # wire contract not stale
 ci: none                       # no .github/workflows; nothing gates a merge but the local commands above
 axis_c: off                    # no CI check-runs exist to read; see skills/_shared/axis-c.md
 mode: greenfield               # a scaffold with one worked example (hello); the real task arrives live
@@ -148,9 +149,17 @@ Vue 3 `<script setup>` + TypeScript, one `App.vue`, no component library, no rou
 
 ## External contracts
 
-None. No external services, no wire-contract tooling, no Postman collection, and the app constructs no prompts and calls no models — `llm-prompt-craft.md` is deliberately **not** installed.
+No external services, no auth, and the app constructs no prompts and calls no models — `llm-prompt-craft.md` is deliberately **not** installed.
 
-The one contract that exists is internal: FastAPI response models under `app/features/<feature>/schemas.py` are the wire truth, and the frontend re-declares them as TypeScript interfaces by hand (see `HelloResponse` in both). Keep the two in sync manually; there is no codegen.
+**The wire contract is `postman/interview-template.postman_collection.json`** — repo-owned, generated from the FastAPI OpenAPI schema by `backend/scripts/gen_postman.py`, and verified by a `check_command`. This is the artifact the review skills mean by "an executable wire-contract artifact": on any wire change, a diff that does not touch it is a 🟡 finding.
+
+> **A route change means regenerating the collection in the same commit.** `python scripts/gen_postman.py` writes it; `--check` fails the build when it drifts. WHY: the collection is the only *executable* doc in the repo — prose rots silently because code compiles and tests pass whether or not the doc is true, and a stale contract is worse than none because it is trusted. Evidence: `backend/scripts/gen_postman.py`; drift verified 2026-08-25 by adding a query param (exit 1) and reverting (exit 0).
+
+> **Never hand-edit the collection.** It is generated; an edit is overwritten on the next run and lost silently. Change the route or the Pydantic schema, then regenerate. Evidence: the `info.description` field says so, so a reviewer reading only the artifact still learns it.
+
+> **A missing Postman API key never excuses skipping the repo-owned update.** Cloud sync is optional and separate; the in-repo artifact is owed on every wire change regardless. WHY: base doctrine records the donor scar where a coder fabricated exactly this excuse — the key was present, and even a genuinely absent one blocks only the cloud push. Evidence: `.claude/skills/afk-review-pr/SKILL.md` §3.5 (donor PR #279).
+
+The other contract is internal: response models under `app/features/<feature>/schemas.py` are the wire truth, and the frontend re-declares them as TypeScript interfaces by hand. Keep the two in sync manually; there is no codegen.
 
 ## Domain language
 

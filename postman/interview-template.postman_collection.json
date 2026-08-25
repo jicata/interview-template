@@ -1,0 +1,42 @@
+{
+  "info": {
+    "name": "Interview Template API",
+    "description": "GENERATED from the FastAPI OpenAPI schema by `backend/scripts/gen_postman.py`. Do not hand-edit \u2014 regenerate. This is the repo-owned executable wire contract; a route change without a matching delta here is a review finding.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8000",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "GET /hello",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/hello?name=World",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "hello"
+          ],
+          "query": [
+            {
+              "key": "name",
+              "value": "World",
+              "description": "",
+              "disabled": false
+            }
+          ]
+        },
+        "description": "Hello"
+      },
+      "response": []
+    }
+  ]
+}
