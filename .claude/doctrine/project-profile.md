@@ -34,7 +34,7 @@ models:                        # per-role tiers. Only `orchestrator` gates the s
 workhorse_model: sonnet        # fallback for any role the map omits
 glossary: docs/UBIQUITOUS_LANGUAGE.md
 smell_routing: "file a GitHub issue on jicata/interview-template; never refactor in place (see doctrine/surface-dont-chase.md)"
-base_version: a92a860          # jicata/skills @ pluggable-doctrine-axes
+base_version: a92a860          # jicata/skills @ master
 ```
 
 ## How to maintain this file (the fill-in convention)
