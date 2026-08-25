@@ -159,6 +159,10 @@ No external services, no auth, and the app constructs no prompts and calls no mo
 
 > **A missing Postman API key never excuses skipping the repo-owned update.** Cloud sync is optional and separate; the in-repo artifact is owed on every wire change regardless. WHY: base doctrine records the donor scar where a coder fabricated exactly this excuse — the key was present, and even a genuinely absent one blocks only the cloud push. Evidence: `.claude/skills/afk-review-pr/SKILL.md` §3.5 (donor PR #279).
 
+> **Mirror to Postman with `python scripts/gen_postman.py --push`; the repo stays the source of truth.** `--push` writes the file first and never reads from the cloud, so a hand-edit made in the Postman UI is overwritten by design. It is idempotent — it looks the collection up by name and updates in place rather than creating duplicates. Collection `Interview Template API`, uid `1495389-aad298ef-b2e2-474c-97f6-a3f4d47314db`, workspace `My Workspace` under the `jicata` Postman account. Evidence: created and re-pushed 2026-08-25; the second run reported `updated`, not `created`.
+
+> **`POSTMAN_API_KEY` lives in the environment only — never in a file, never in a commit.** Without it `--push` prints why and exits 1, having already written the repo artifact. WHY: the repo-owned collection is the contract; the cloud is a convenience, so a missing key must degrade rather than block. Evidence: verified 2026-08-25 with the key unset. See also the donor scar above.
+
 The other contract is internal: response models under `app/features/<feature>/schemas.py` are the wire truth, and the frontend re-declares them as TypeScript interfaces by hand. Keep the two in sync manually; there is no codegen.
 
 ## Domain language

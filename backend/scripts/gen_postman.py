@@ -7,6 +7,11 @@ makes drift a check rather than a habit.
 
     python scripts/gen_postman.py            # write the collection
     python scripts/gen_postman.py --check     # exit 1 if it is stale
+    python scripts/gen_postman.py --push      # mirror it to Postman cloud
+
+The repo is the source of truth; Postman is a mirror. --push never reads from
+the cloud, so a hand-edit made in the Postman UI is overwritten, by design.
+Requires POSTMAN_API_KEY in the environment — never in source, never committed.
 """
 from __future__ import annotations
 
@@ -102,9 +107,60 @@ def build() -> dict:
     }
 
 
+API = 'https://api.getpostman.com'
+
+
+def push(collection: dict) -> int:
+    """Mirror the repo-owned collection to Postman. Create on first run, update after."""
+    import os
+    import urllib.error
+    import urllib.request
+
+    key = os.environ.get('POSTMAN_API_KEY')
+    if not key:
+        print(
+            'POSTMAN_API_KEY is not set. The cloud mirror is optional; the '
+            'collection is the contract and is already written. Export the key to push.',
+            file=sys.stderr,
+        )
+        return 1
+
+    def call(method: str, path: str, body: dict | None = None) -> dict:
+        data = json.dumps(body).encode() if body is not None else None
+        req = urllib.request.Request(f'{API}{path}', data=data, method=method)
+        req.add_header('X-Api-Key', key)
+        req.add_header('Content-Type', 'application/json')
+        try:
+            with urllib.request.urlopen(req, timeout=30) as r:
+                return json.loads(r.read())
+        except urllib.error.HTTPError as e:
+            detail = e.read().decode(errors='replace')[:400]
+            raise SystemExit(
+                f'Postman API {method} {path} failed: {e.code} - {detail}'
+            ) from e
+
+    name = collection['info']['name']
+    existing = next(
+        (c for c in call('GET', '/collections').get('collections', []) if c['name'] == name),
+        None,
+    )
+    if existing:
+        out = call('PUT', f"/collections/{existing['uid']}", {'collection': collection})
+        verb = 'updated'
+    else:
+        workspaces = call('GET', '/workspaces').get('workspaces', [])
+        ws = next((w for w in workspaces if w['name'] == 'My Workspace'), workspaces[0])
+        out = call('POST', f"/collections?workspace={ws['id']}", {'collection': collection})
+        verb = 'created'
+    info = out.get('collection', {})
+    print(f"{verb} '{info.get('name', name)}' in Postman (uid {info.get('uid', '?')})")
+    return 0
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument('--check', action='store_true', help='exit 1 if the collection is stale')
+    parser.add_argument('--push', action='store_true', help='mirror to Postman (needs POSTMAN_API_KEY)')
     args = parser.parse_args()
 
     rendered = json.dumps(build(), indent=2) + '\n'
@@ -123,9 +179,13 @@ def main() -> int:
         print(f'{OUT.name} is up to date')
         return 0
 
+    collection = build()
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(rendered, encoding='utf-8')
-    print(f'wrote {OUT} ({len(build()["item"])} request(s))')
+    print(f'wrote {OUT} ({len(collection["item"])} request(s))')
+
+    if args.push:
+        return push(collection)
     return 0
 
 
