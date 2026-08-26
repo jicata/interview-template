@@ -13,6 +13,34 @@
   ],
   "item": [
     {
+      "name": "GET /customers/{customer_id}/reorder-suggestions",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/customers/{customer_id}/reorder-suggestions?",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "customers",
+            "{customer_id}",
+            "reorder-suggestions"
+          ],
+          "query": [
+            {
+              "key": "as_of",
+              "value": "",
+              "description": "",
+              "disabled": true
+            }
+          ]
+        },
+        "description": "List products this customer is due to reorder, most overdue first.\n\n`as_of` is the reference date the cadence is projected against; it\ndefaults to today when omitted. A product due exactly on `as_of` is\nincluded \u2014 `days_overdue == 0` counts as due, not merely approaching."
+      },
+      "response": []
+    },
+    {
       "name": "GET /hello",
       "request": {
         "method": "GET",
