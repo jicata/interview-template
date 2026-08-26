@@ -28,6 +28,12 @@ def save_lines(customer_id: int, lines: list[DraftLineInput]) -> DraftOrder:
     """
     merged = _sum_by_product(lines)
 
+    # This is the repo's one planted defect (b0a7929) guarded: every write in
+    # this block must go through this transaction, never get_connection().
+    # Validation below completes before the first write, so no test reaching
+    # this endpoint through the API can observe the rollback path directly —
+    # see tests/test_draft_api.py::test_a_failure_after_the_first_write_rolls_back_everything
+    # for the regression guard, which forces a failure mid-batch instead.
     with transaction() as conn:
         if not queries.customer_exists(conn, customer_id):
             raise CustomerNotFoundError(f'customer {customer_id} not found')

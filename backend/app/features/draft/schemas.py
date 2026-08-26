@@ -1,3 +1,5 @@
+from typing import Literal
+
 from pydantic import BaseModel, Field
 
 
@@ -21,5 +23,9 @@ class DraftLineOut(BaseModel):
 class DraftOrder(BaseModel):
     id: int
     customer_id: int
-    status: str
+    # This endpoint only ever finds or creates a draft, so 'draft' is the
+    # only value it can return; `Literal` puts that fact on the wire rather
+    # than widening the schema's CHECK(status IN ('completed', 'draft')) to
+    # a bare `str`.
+    status: Literal['draft']
     lines: list[DraftLineOut]

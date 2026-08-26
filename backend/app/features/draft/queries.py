@@ -16,6 +16,10 @@ def customer_exists(conn: sqlite3.Connection, customer_id: int) -> bool:
 
 
 def existing_product_ids(conn: sqlite3.Connection, product_ids: list[int]) -> set[int]:
+    # The f-string interpolates only a `?`-placeholder count, never a value —
+    # every product id is still bound as a parameter below. `product_ids` is
+    # never empty here: `SaveLinesRequest.lines` requires min_length=1 and
+    # `_sum_by_product` preserves at least one key, so `IN ()` is unreachable.
     placeholders = ', '.join('?' * len(product_ids))
     rows = conn.execute(
         f'SELECT id FROM products WHERE id IN ({placeholders})', product_ids
@@ -36,6 +40,9 @@ def create_draft_order(conn: sqlite3.Connection, customer_id: int) -> int:
         "INSERT INTO orders (customer_id, status, order_date) VALUES (?, 'draft', NULL)",
         (customer_id,),
     )
+    # sqlite3 types this int | None, but it is only ever None when the last
+    # statement wasn't an INSERT into a rowid table — never true here.
+    assert cursor.lastrowid is not None, 'INSERT into a rowid table always sets lastrowid'
     return cursor.lastrowid
 
 

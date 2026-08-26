@@ -1,6 +1,8 @@
+import pytest
 from fastapi.testclient import TestClient
 
-from app.db import get_connection
+from app.db import get_connection, transaction
+from app.features.draft import queries as draft_queries
 from app.main import app
 
 client = TestClient(app)
@@ -97,6 +99,74 @@ def test_written_unit_price_matches_product_price_and_is_not_derived_on_read():
         (r.json()['id'], WIDGET_A),
     ).fetchone()
     assert stored['unit_price'] == 10.00
+
+
+def test_stored_unit_price_is_historical_not_refreshed_from_products():
+    # order_lines.unit_price equals products.unit_price for every seeded
+    # row, which hides the historical-vs-current distinction from any test
+    # that only ever writes at the seeded price. Mutating the product's
+    # price between two writes makes the two values genuinely diverge, so
+    # this actually fails if `read_draft_order` were ever changed to join
+    # `products` for `unit_price` instead of selecting the frozen value off
+    # `order_lines`.
+    client.post(
+        f'/customers/{BETA_CORP}/draft/lines',
+        json={'lines': [{'product_id': WIDGET_A, 'quantity': 12}]},
+    )
+
+    with transaction() as tx:
+        tx.execute('UPDATE products SET unit_price = 99.00 WHERE id = ?', (WIDGET_A,))
+    try:
+        r = client.post(
+            f'/customers/{BETA_CORP}/draft/lines',
+            json={'lines': [{'product_id': WIDGET_B, 'quantity': 6}]},
+        )
+        assert r.status_code == 200
+        line = next(l for l in r.json()['lines'] if l['product_id'] == WIDGET_A)
+        assert line['unit_price'] == 10.00  # historical, not the now-current 99.00
+    finally:
+        with transaction() as tx:
+            tx.execute('UPDATE products SET unit_price = 10.00 WHERE id = ?', (WIDGET_A,))
+
+
+def test_a_failure_after_the_first_write_rolls_back_everything(monkeypatch):
+    # Validation completes before the first write, so no test reaching this
+    # endpoint through the API can otherwise force a failure mid-batch — the
+    # rollback path (the repo's one planted defect, b0a7929) would stay
+    # unguarded without this. Forces `insert_line`'s second call to raise,
+    # after the draft has already been created and the first line written,
+    # and asserts db.transaction() actually discarded both.
+    real_insert_line = draft_queries.insert_line
+    calls = {'n': 0}
+
+    def failing_insert_line(conn, order_id, product_id, quantity, unit_price):
+        calls['n'] += 1
+        if calls['n'] == 2:
+            raise RuntimeError('simulated failure after the first write')
+        return real_insert_line(conn, order_id, product_id, quantity, unit_price)
+
+    monkeypatch.setattr(draft_queries, 'insert_line', failing_insert_line)
+
+    before_orders = _orders_count()
+
+    with pytest.raises(RuntimeError):
+        client.post(
+            f'/customers/{BETA_CORP}/draft/lines',
+            json={
+                'lines': [
+                    {'product_id': WIDGET_A, 'quantity': 12},
+                    {'product_id': WIDGET_B, 'quantity': 6},
+                ]
+            },
+        )
+
+    assert _orders_count() == before_orders, 'the phantom draft must be rolled back too'
+    draft_lines = get_connection().execute(
+        "SELECT ol.* FROM order_lines ol JOIN orders o ON o.id = ol.order_id "
+        "WHERE o.customer_id = ? AND o.status = 'draft'",
+        (BETA_CORP,),
+    ).fetchall()
+    assert draft_lines == []
 
 
 def test_batch_with_unknown_product_id_as_last_item_writes_nothing():
