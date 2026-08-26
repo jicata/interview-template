@@ -13,7 +13,7 @@ The domain nouns, as the schema and seed data name them. Use these in code, test
 | **Order** | A customer's purchase. Has a `status` and, when placed, an `order_date`. | purchase, cart, basket |
 | **Order line** | One product-and-quantity row on an order, with the `unit_price` **charged at the time**. Every seeded order has exactly one. | line item, item, order detail |
 | **Status** | Exactly `completed` or `draft`. Enforced by a `CHECK` constraint — no other value can be written. | state, stage |
-| **Draft** | An order not yet placed: `status = 'draft'`, `order_date` empty. Order 19 is the only one, and it has no lines. | pending, open, in progress |
+| **Draft** | An order not yet placed: `status = 'draft'`, `order_date` empty. Order 19 (Acme) is the only one seeded, with no lines; a customer with none gets one created on demand by the draft-save endpoint. Each customer has at most one at a time. | pending, open, in progress |
 | **Completed** | An order that has been placed, with an `order_date`. | fulfilled, shipped, closed |
 | **Unit price** | Ambiguous on purpose — always qualify it. On **products** it is the current price; on **order lines** it is the historical price charged. They are equal in the seed data, which hides the difference. | price |
 | **Cadence** | The mean number of days between a customer's consecutive **completed** orders of one product. Requires at least two completed orders for that customer/product pair; a pair with only one is excluded, not defaulted. | frequency, interval, rhythm |

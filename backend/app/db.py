@@ -41,6 +41,10 @@ def _build_db() -> sqlite3.Connection:
     # pool; sharing one connection requires a serialized sqlite3 build.
     assert sqlite3.threadsafety == 3, 'sqlite3 must be built in serialized mode'
     conn = sqlite3.connect(':memory:', check_same_thread=False)
+    # SQLite ignores declared REFERENCES unless this pragma is set per
+    # connection, and it is a no-op once a transaction is open — it must run
+    # here, before the executescript, or it silently enforces nothing.
+    conn.execute('PRAGMA foreign_keys = ON')
     conn.row_factory = sqlite3.Row
     c = conn.cursor()
     c.executescript('''
