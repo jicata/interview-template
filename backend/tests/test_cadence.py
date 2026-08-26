@@ -1,5 +1,7 @@
 from datetime import date
 
+import pytest
+
 from app.features.reorder.cadence import suggest
 
 
@@ -93,3 +95,56 @@ def test_suggested_quantity_is_pack_size():
 
 def test_empty_input_returns_empty_list():
     assert suggest([], as_of=date(2026, 1, 1)) == []
+
+
+# Real seeded pairs, as of 2026-08-26 (backend/data/orders.csv,
+# order_lines.csv, products.csv). Expected values are literals derived
+# independently from the CSVs, not recomputed the way the implementation
+# computes them. Supply Z's gaps are 30 and 28 (February 2026 has 28 days),
+# so its mean of 29 is exact — this pins that the seed data does not exercise
+# Python's banker's rounding on a `.5` mean, per issue #2's sharp edges.
+@pytest.mark.parametrize(
+    'product_id, name, sku, pack_size, unit_price, order_dates, expected_cadence, expected_next_due, expected_overdue',
+    [
+        (
+            1, 'Widget A', 'WIDG-A', 12, 10.00,
+            ['2025-09-01', '2025-11-01', '2026-01-15', '2026-03-20'],
+            67, date(2026, 5, 26), 92,
+        ),
+        (
+            2, 'Widget B', 'WIDG-B', 6, 15.00,
+            ['2025-08-01', '2025-11-01', '2026-02-01'],
+            92, date(2026, 5, 4), 114,
+        ),
+        (
+            3, 'Supply Z', 'SUPP-Z', 1, 25.00,
+            ['2026-01-05', '2026-02-04', '2026-03-04'],
+            29, date(2026, 4, 2), 146,
+        ),
+        (
+            4, 'Gadget X', 'GADG-X', 4, 50.00,
+            ['2025-10-01', '2025-11-15', '2025-12-30', '2026-02-10', '2026-03-25', '2026-05-05'],
+            43, date(2026, 6, 17), 70,
+        ),
+        (
+            5, 'Gadget Y', 'GADG-Y', 1, 75.00,
+            ['2025-10-01', '2026-02-05'],
+            127, date(2026, 6, 12), 75,
+        ),
+    ],
+)
+def test_all_five_seeded_pairs(
+    product_id, name, sku, pack_size, unit_price,
+    order_dates, expected_cadence, expected_next_due, expected_overdue,
+):
+    rows = [
+        _row(product_id, name, sku, pack_size, unit_price, order_date)
+        for order_date in order_dates
+    ]
+    result = suggest(rows, as_of=date(2026, 8, 26))
+
+    assert len(result) == 1
+    suggestion = result[0]
+    assert suggestion.cadence_days == expected_cadence
+    assert suggestion.next_due_date == expected_next_due
+    assert suggestion.days_overdue == expected_overdue

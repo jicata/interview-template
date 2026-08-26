@@ -33,12 +33,13 @@ def suggest(rows: list[dict], as_of: date) -> list[Suggestion]:
     by_product = sorted(rows, key=lambda r: (r['product_id'], r['order_date']))
     grouped = (list(group) for _, group in groupby(by_product, key=lambda r: r['product_id']))
 
-    due = [
-        suggestion
-        for product_rows in grouped
-        if len(product_rows) >= 2
-        and (suggestion := _suggest_for_product(product_rows, as_of)).days_overdue >= 0
-    ]
+    due = []
+    for product_rows in grouped:
+        if len(product_rows) < 2:
+            continue
+        suggestion = _suggest_for_product(product_rows, as_of)
+        if suggestion.days_overdue >= 0:
+            due.append(suggestion)
     return sorted(due, key=lambda s: s.days_overdue, reverse=True)
 
 
