@@ -25,3 +25,4 @@ What this makes easy, what it makes hard, and what it forecloses.
 ## Records
 
 - [001. Adopt layered architecture, not VSA, Clean, or Onion](001-layered-not-vsa-or-clean.md) — why the template is layered and what that decides about data access.
+- [002. Derive order-line pricing on read; round each line, then sum](002-pricing-derived-not-stored.md) — why no discount column exists, and which of the two order totals is the right one.
