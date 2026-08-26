@@ -51,17 +51,36 @@ const removingLineId = ref<number | null>(null)
 const rejection = ref<string | null>(null)
 
 const productId = ref<number | null>(null)
-// Held as the raw input string so "empty" and "0" stay distinguishable; a
-// numeric ref would collapse both to a falsy value.
-const quantityInput = ref('')
+
+/**
+ * What `v-model` on a `type="number"` input genuinely puts here — and the
+ * declared type has to say so, because nothing else will.
+ *
+ * Vue turns on number casting for `type="number"` on its own; the `.number`
+ * modifier is implied, not required (`runtime-dom`, `vModelText.created`:
+ * `castToNumber = number || props.type === 'number'`). The cast runs through
+ * `looseToNumber`, which returns its input *unchanged* when `parseFloat` fails.
+ * So a parseable field assigns a `number` and an emptied one assigns the raw
+ * `''`, and this ref really does hold both.
+ *
+ * Typing it as `string` is what broke the Add-line button: `.trim()` on the
+ * number threw inside the computed below, the render effect died with it, and
+ * `:disabled` kept the last value it had managed to render. Typing it as
+ * `number | null` would have failed the same way one layer over — `vue-tsc`
+ * cannot see through `v-model`, so a wrong annotation here is invisible to
+ * every gate in the repo.
+ */
+const quantityInput = ref<number | ''>('')
 
 const quantity = computed(() =>
-  quantityInput.value.trim() === '' ? null : Number(quantityInput.value),
+  quantityInput.value === '' ? null : quantityInput.value,
 )
 
 const selectedProduct = computed(
   () => products.value.find((p) => p.id === productId.value) ?? null,
 )
+
+const packSize = computed(() => selectedProduct.value?.pack_size ?? 1)
 
 const packHint = computed(() => {
   const product = selectedProduct.value
@@ -154,7 +173,13 @@ function messageOf(e: unknown): string {
         <span class="pill">{{ order.status }}</span>
       </p>
 
-      <form class="add-line" @submit.prevent="addLine">
+      <!--
+        novalidate: the server owns the pack-size rule, and its sentence is what
+        the user is meant to read. Native validation would abort the submit
+        before `@submit` ever fired — no event, no request, no message, nothing
+        on screen. The min/step pair below is an affordance, not a second gate.
+      -->
+      <form class="add-line" novalidate @submit.prevent="addLine">
         <div class="field field--grow">
           <label for="product">Product</label>
           <select id="product" v-model="productId">
@@ -167,13 +192,20 @@ function messageOf(e: unknown): string {
 
         <div class="field">
           <label for="quantity">Quantity</label>
+          <!--
+            `step` counts from `min`, not from zero. Binding both to the pack
+            size makes the valid values 12, 24, 36 for a pack of 12 — the pack
+            multiples exactly, and the spinner arrows move one pack at a time.
+            The previous `min="1"` made the step base 1, so the arrows walked
+            1, 13, 25 and every real pack multiple was flagged invalid.
+          -->
           <input
             id="quantity"
             v-model="quantityInput"
             type="number"
-            min="1"
-            :step="selectedProduct?.pack_size ?? 1"
-            placeholder="0"
+            :min="packSize"
+            :step="packSize"
+            :placeholder="String(packSize)"
           />
         </div>
 
