@@ -2,9 +2,15 @@
 import { onMounted, ref, watch } from 'vue'
 import { get, post } from '../api/client'
 import { useBasket } from '../composables/useBasket'
-import type { Customer, DraftOrder, ReorderSuggestion } from '../types/reorder'
+import type {
+  Customer,
+  DraftOrder,
+  ReorderSuggestion,
+  SaveLinesRequest,
+} from '../types/reorder'
 
 const customers = ref<Customer[]>([])
+const customersError = ref<string | null>(null)
 const selectedCustomerId = ref<number | null>(null)
 
 const suggestions = ref<ReorderSuggestion[]>([])
@@ -24,22 +30,33 @@ onMounted(async () => {
       selectedCustomerId.value = customers.value[0].id
     }
   } catch (e) {
-    suggestionsError.value = e instanceof Error ? e.message : 'Unknown error'
+    customersError.value = e instanceof Error ? e.message : 'Unknown error'
   }
 })
 
+// Guards against a stale response landing after a newer request: if the
+// customer changes again while a fetch is in flight, only the response for
+// the *current* selection is applied. Without this, switching A -> B while
+// A's request is still pending could render A's rows under B's selection
+// if A's response resolves after B's.
+let suggestionsRequestId = 0
+
 async function loadSuggestions(customerId: number) {
+  const requestId = ++suggestionsRequestId
   suggestionsLoading.value = true
   suggestionsError.value = null
   try {
-    suggestions.value = await get<ReorderSuggestion[]>(
+    const result = await get<ReorderSuggestion[]>(
       `/customers/${customerId}/reorder-suggestions`,
     )
+    if (requestId !== suggestionsRequestId) return // superseded by a later switch
+    suggestions.value = result
   } catch (e) {
+    if (requestId !== suggestionsRequestId) return
     suggestionsError.value = e instanceof Error ? e.message : 'Unknown error'
     suggestions.value = []
   } finally {
-    suggestionsLoading.value = false
+    if (requestId === suggestionsRequestId) suggestionsLoading.value = false
   }
 }
 
@@ -70,7 +87,7 @@ async function save() {
   saving.value = true
   saveError.value = null
   try {
-    const draft = await post<DraftOrder>(
+    const draft = await post<DraftOrder, SaveLinesRequest>(
       `/customers/${selectedCustomerId.value}/draft/lines`,
       { lines: basket.lines() },
     )
@@ -97,6 +114,7 @@ async function save() {
         </option>
       </select>
     </label>
+    <p v-if="customersError" style="color: red">Error loading customers: {{ customersError }}</p>
 
     <p v-if="suggestionsLoading">Loading suggestions...</p>
     <p v-else-if="suggestionsError" style="color: red">Error: {{ suggestionsError }}</p>

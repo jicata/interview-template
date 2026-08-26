@@ -9,26 +9,28 @@ interface BasketLine {
   quantity: number
 }
 
-// The one piece of real logic on the frontend. Ticking a suggestion is the
-// only quantity control the user has — the PRD puts editing the suggested
-// quantity out of scope — so add() must merge by product rather than ever
-// appending a second line for the same product.
+// Stages suggestions for one batched save. The checkbox UI (ReorderPanel)
+// only ever calls add() for a product not already staged — the checkbox's
+// `checked` state IS `has(product_id)`, so a second tick always routes to
+// remove() instead. There is therefore no reachable path that re-adds an
+// already-staged product in this session, and no merge-by-quantity branch
+// here: the PRD puts "editing the suggested quantity before saving" out of
+// scope, and the AC's "individually selected and deselected" is checkbox
+// (binary) semantics. Ticking the same product again after a save — i.e.
+// selecting a still-overdue suggestion a second time — is a fresh add() in
+// a fresh basket, and increases the draft quantity via #3's backend
+// increment rule, not via any client-side merge.
 export function useBasket() {
   const entries = ref<Map<number, BasketLine>>(new Map())
 
   function add(suggestion: ReorderSuggestion): void {
-    const existing = entries.value.get(suggestion.product_id)
-    if (existing) {
-      existing.quantity += suggestion.pack_size
-    } else {
-      entries.value.set(suggestion.product_id, {
-        product_id: suggestion.product_id,
-        name: suggestion.name,
-        sku: suggestion.sku,
-        unit_price: suggestion.unit_price,
-        quantity: suggestion.suggested_quantity,
-      })
-    }
+    entries.value.set(suggestion.product_id, {
+      product_id: suggestion.product_id,
+      name: suggestion.name,
+      sku: suggestion.sku,
+      unit_price: suggestion.unit_price,
+      quantity: suggestion.suggested_quantity,
+    })
   }
 
   function remove(productId: number): void {

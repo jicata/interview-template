@@ -6,7 +6,7 @@ export async function get<T>(path: string): Promise<T> {
   return res.json() as Promise<T>
 }
 
-export async function post<T>(path: string, body: unknown): Promise<T> {
+export async function post<T, B = unknown>(path: string, body: B): Promise<T> {
   const res = await fetch(`${BASE}${path}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

@@ -28,6 +28,10 @@ export interface DraftLineInput {
   quantity: number
 }
 
+export interface SaveLinesRequest {
+  lines: DraftLineInput[]
+}
+
 export interface DraftLineOut {
   product_id: number
   name: string
