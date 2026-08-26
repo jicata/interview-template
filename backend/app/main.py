@@ -2,7 +2,7 @@ import app.db as _db  # noqa: F401 — triggers CSV load at startup
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import draft, hello, reorder
+from app.api import customers, draft, hello, reorder
 
 app = FastAPI(title='Interview Template API')
 app.add_middleware(
@@ -12,5 +12,6 @@ app.add_middleware(
     allow_headers=['*'],
 )
 app.include_router(hello.router)
+app.include_router(customers.router)
 app.include_router(reorder.router)
 app.include_router(draft.router)
