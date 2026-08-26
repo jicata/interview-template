@@ -37,6 +37,130 @@
         "description": "Hello"
       },
       "response": []
+    },
+    {
+      "name": "POST /orders",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/orders",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "orders"
+          ]
+        },
+        "description": "Start a new empty draft order for a customer.",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"customer_id\": 0\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /orders/{order_id}",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/orders/{order_id}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "orders",
+            "{order_id}"
+          ]
+        },
+        "description": "Read an order back with every line priced and the order total."
+      },
+      "response": []
+    },
+    {
+      "name": "POST /orders/{order_id}/lines",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/orders/{order_id}/lines",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "orders",
+            "{order_id}",
+            "lines"
+          ]
+        },
+        "description": "Add units of a product to a draft order.\n\nRejects a quantity that is not a whole number of packs. Returns the whole\nrecomputed order, so the running total needs no second request.",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"product_id\": 0,\n  \"quantity\": 0\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "DELETE /orders/{order_id}/lines/{line_id}",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/orders/{order_id}/lines/{line_id}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "orders",
+            "{order_id}",
+            "lines",
+            "{line_id}"
+          ]
+        },
+        "description": "Remove a line and return the recomputed order."
+      },
+      "response": []
+    },
+    {
+      "name": "GET /products",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/products",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "products"
+          ]
+        },
+        "description": "The product catalogue, with each product's pack size and current price."
+      },
+      "response": []
     }
   ]
 }

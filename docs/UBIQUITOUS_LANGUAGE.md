@@ -16,6 +16,12 @@ The domain nouns, as the schema and seed data name them. Use these in code, test
 | **Draft** | An order not yet placed: `status = 'draft'`, `order_date` empty. Order 19 is the only one, and it has no lines. | pending, open, in progress |
 | **Completed** | An order that has been placed, with an `order_date`. | fulfilled, shipped, closed |
 | **Unit price** | Ambiguous on purpose — always qualify it. On **products** it is the current price; on **order lines** it is the historical price charged. They are equal in the seed data, which hides the difference. | price |
+| **Pack multiple** | A quantity that is an exact multiple of the product's `pack_size`. The only quantity an order line accepts — 12 or 24 of a pack-of-12 product, never 10. | valid quantity, round quantity |
+| **Volume discount** | The one pricing rule: a line whose `quantity` is **strictly greater than 50** earns 10% off that line. Applies per line, not per order. A quantity of exactly 50 earns nothing. | bulk discount, tier, promotion, rebate |
+| **Discount rate** | The fraction taken off a line — `0.10` when the volume discount applies, `0.0` otherwise. A rate, never an amount. | discount, markdown |
+| **Discount amount** | The money the discount rate takes off a line, rounded to 2dp. | discount, saving |
+| **Line total** | What one order line is charged: `unit_price × quantity` less the discount amount. Already rounded. | subtotal, extended price, amount |
+| **Order total** | The sum of the order's line totals. The sum of *rounded* line totals — see ADR 002. | grand total, subtotal, sum |
 
 ## Conventions
 
