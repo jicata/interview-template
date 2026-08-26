@@ -33,6 +33,7 @@ A feature is a route module in `api/` plus a package in `features/`. Adding one 
 | Feature | Route (transport) | Handler (application) | Schemas |
 | --- | --- | --- | --- |
 | `hello` | `app/api/hello.py` — `GET /hello?name=` | `app/features/hello/handler.py` | `app/features/hello/schemas.py` |
+| `reorder` | `app/api/reorder.py` — `GET /customers/{customer_id}/reorder-suggestions?as_of=` | `app/features/reorder/handler.py` → pure deep module `app/features/reorder/cadence.py` (no db import) | `app/features/reorder/schemas.py` |
 
 ## Data
 

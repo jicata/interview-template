@@ -16,6 +16,9 @@ The domain nouns, as the schema and seed data name them. Use these in code, test
 | **Draft** | An order not yet placed: `status = 'draft'`, `order_date` empty. Order 19 is the only one, and it has no lines. | pending, open, in progress |
 | **Completed** | An order that has been placed, with an `order_date`. | fulfilled, shipped, closed |
 | **Unit price** | Ambiguous on purpose — always qualify it. On **products** it is the current price; on **order lines** it is the historical price charged. They are equal in the seed data, which hides the difference. | price |
+| **Cadence** | The mean number of days between a customer's consecutive **completed** orders of one product. Requires at least two completed orders for that customer/product pair; a pair with only one is excluded, not defaulted. | frequency, interval, rhythm |
+| **Suggestion** | A product a customer is inferred to be due to reorder: their cadence projected forward from their last order date, past the reference date. Carries the current unit price, since it proposes a *future* order. | recommendation, reminder |
+| **Overdue (days overdue)** | Days elapsed between a suggestion's projected due date and the reference date (`as_of`). Zero counts as overdue — due today is due. | late, past due |
 
 ## Conventions
 

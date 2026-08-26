@@ -13,6 +13,34 @@
   ],
   "item": [
     {
+      "name": "GET /customers/{customer_id}/reorder-suggestions",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/customers/{customer_id}/reorder-suggestions?",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "customers",
+            "{customer_id}",
+            "reorder-suggestions"
+          ],
+          "query": [
+            {
+              "key": "as_of",
+              "value": "",
+              "description": "",
+              "disabled": true
+            }
+          ]
+        },
+        "description": "Reorder Suggestions"
+      },
+      "response": []
+    },
+    {
       "name": "GET /hello",
       "request": {
         "method": "GET",
