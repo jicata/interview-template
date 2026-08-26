@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { get } from './api/client'
+import ReorderPanel from './components/ReorderPanel.vue'
 
 interface HelloResponse {
   message: string
@@ -28,5 +29,7 @@ onMounted(async () => {
     <p v-if="loading">Loading...</p>
     <p v-else-if="error" style="color: red">Error: {{ error }}</p>
     <p v-else>{{ message }}</p>
+
+    <ReorderPanel />
   </div>
 </template>
