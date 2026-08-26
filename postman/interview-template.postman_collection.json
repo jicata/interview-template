@@ -13,6 +13,41 @@
   ],
   "item": [
     {
+      "name": "POST /customers/{customer_id}/draft/lines",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/customers/{customer_id}/draft/lines",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "customers",
+            "{customer_id}",
+            "draft",
+            "lines"
+          ]
+        },
+        "description": "Merge a batch of product/quantity lines onto a customer's draft order.\n\nFinds the customer's draft order or creates one, then writes every line\nin a single transaction \u2014 either the whole batch lands or none of it\ndoes. A product already on the draft has its quantity increased rather\nthan gaining a second row; duplicate product ids within the batch are\nsummed before writing.",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"lines\": [\n    {\n      \"product_id\": 0,\n      \"quantity\": 0\n    }\n  ]\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": []
+    },
+    {
       "name": "GET /customers/{customer_id}/reorder-suggestions",
       "request": {
         "method": "GET",
