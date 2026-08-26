@@ -13,6 +13,24 @@
   ],
   "item": [
     {
+      "name": "GET /customers",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/customers",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "customers"
+          ]
+        },
+        "description": "List Customers"
+      },
+      "response": []
+    },
+    {
       "name": "POST /customers/{customer_id}/draft/lines",
       "request": {
         "method": "POST",
